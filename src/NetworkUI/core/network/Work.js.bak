@@ -1,0 +1,124 @@
+import Form from 'react-bootstrap/Form';
+import './core.scss';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { useEffect, useRef, useState } from "react";
+import Graph2D from "./Graph2D";
+import Graph3D from './Graph3D';
+import Filter from '../../tabs/WorkFilter';
+
+const uniqueNodes = (nodes) => {
+    const uniqueIds = [];
+    return nodes.filter(element => {
+        const isDuplicate = uniqueIds.includes(element.id);
+
+        if (!isDuplicate) {
+            uniqueIds.push(element.id);
+            return true;
+        }
+
+        return false;
+    });
+}
+
+
+const Work = ({ workNetworkData, settings, secondDegree, threeD, tab, show3DText }) => {
+    console.log({ workNetworkData })
+
+    const [nodes, setNodes] = useState([]);
+    const [links, setLinks] = useState([]);
+
+    const nodeSettings = (uniqueNode) => uniqueNode.map((u) => {
+        if (u.batch === "work1") return (u.color = settings[0].node1, u.size = settings[1].node1 === '0' ?
+            1 : settings[1].node1 * 2, u.fontSize = settings[2].node1 === '0' ? 1 : settings[2].node1 / 5,
+            u.symbolType = "square")
+        if (u.batch === "people1") return (u.color = settings[0].node2, u.size = settings[1].node2 === '0' ?
+            1 : settings[1].node2 * 2, u.fontSize = settings[2].node2 === '0' ? 1 : settings[2].node2 / 5)
+        if (u.batch === "work2") return (u.color = settings[0].node3, u.size = settings[1].node3 === '0' ?
+            1 : settings[1].node3 * 2, u.fontSize = settings[2].node3 === '0' ? 1 : settings[2].node3 / 5,
+            u.symbolType = "square")
+        if (u.batch === "people2") return (u.color = settings[0].node3, u.size = settings[1].node3 === '0' ?
+            1 : settings[1].node3 * 2, u.fontSize = settings[2].node3 === '0' ? 1 : settings[2].node3 / 5
+        )
+    })
+
+    useEffect(() => {
+        fetchNodes(workNetworkData[0], workNetworkData[1]);
+        fetchLinks(workNetworkData[0], workNetworkData[1]);
+    }, [workNetworkData, secondDegree, settings[0], settings[1], settings[2]]);
+
+    const publishersArr = workNetworkData[0].map(c => c.publisher_id)
+    const printersArr = workNetworkData[0].map(c => c.printer_id)
+    const dedicateesArr = workNetworkData[0].map(c => c.patron_id)
+    const booksellersArr = workNetworkData[0].map(c => c.bookseller_id)
+
+    const publishersArr1 = workNetworkData[1].map(c => c.publisher_id)
+    const printersArr1 = workNetworkData[1].map(c => c.printer_id)
+    const dedicateesArr1 = workNetworkData[1].map(c => c.patron_id)
+    const booksellersArr1 = workNetworkData[1].map(c => c.bookseller_id)
+
+    const fetchNodes = (networkData1, networkData2) => {
+        const source1 = networkData1.map((c) => { return { id: c.display_title, work_id: c.id, batch: "work1" } })
+        const author = networkData1.map((c) => { const v = c.author_id_id; 
+            return { id: (v === null? "" : c.author_id.name), work_id: c.id, batch: "people1" } })
+        const target1 = [...publishersArr, ...printersArr, ...dedicateesArr, ...booksellersArr].map((c) =>
+            c.flat().map((c) => { return { id: c.display_name, work_id: networkData1[0].id, batch: "people1" } }))
+
+        const nodes1 = [...source1, ...author, ...target1.flat()]
+
+        const source2 = networkData2.map((c) => { return { id: c.display_title, work_id: c.id, batch: "work2" } })
+        // const g = networkData2.map(c => { const g = c.author_id.name; const v = c.work_id; console.log({g, v})})
+        const source2Author = networkData2.map((c) => { const v = c.author_id_id; 
+            return { id: (v === null? "" : c.author_id.name), work_id: networkData2[0].id, batch: "people2" } })
+        const target2 = [...publishersArr1, ...printersArr1, ...dedicateesArr1, ...booksellersArr1].map((c) =>
+            c.flat().map((c) => { return { id: c.display_name, work_id: networkData2[0].id, batch: "people2" } }))
+
+        // const nodes2 = [...source2, ...source2Author, ...target2.flat()]
+        const nodes2 = [...source2]
+
+
+        let nodes = []
+        if (secondDegree) nodes = [...nodes1, ...nodes2]
+        else nodes = [...nodes1]
+
+        console.log({ nodes })
+        const uniqueNode = uniqueNodes(nodes)
+        nodeSettings(uniqueNode)
+        setNodes(uniqueNode)
+    }
+
+    const fetchLinks = (networkData1, networkData2) => {
+        const links1 = networkData1.map((c) => { const v = c.author_id_id; 
+            return { source: c.display_title, target: (v === null? "" : c.author_id.name) } })
+        const links2 = [...publishersArr, ...dedicateesArr, ...booksellersArr, ...printersArr].map(c =>
+            c.flat().map((c) => { return { source: networkData1[0].display_title, target: c.display_name } })
+        )
+
+        const links3 = networkData2.map((c) => { const v = c.author_id_id; 
+             return { source: (v === null? "" : c.author_id.name), target: c.display_title } })
+        const links4 = networkData2.map((t) => [...publishersArr, ...dedicateesArr, ...booksellersArr, ...printersArr].map(c =>
+            c.flat().map((c) => { return { target: t.display_title, source: c.display_name } })
+        ))
+
+        let links = []
+        if (secondDegree) links = [...links1, ...links2.flat(), ...links4.flat().flat()]
+        else links = [...links1, ...links2.flat()]
+
+        const uniqueLinks = [...new Set(links.map(JSON.stringify))].map(JSON.parse);
+
+        setLinks(uniqueLinks)
+    }
+
+    const data = { nodes: nodes, links: links }
+    const data3D = JSON.parse(JSON.stringify(data));
+
+    return (
+        <>
+            {!threeD && <Graph2D data={data} />}
+            {threeD && <Graph3D data={data3D} show3DText={show3DText}/>}
+
+            {tab === "show-filter" && <Filter nodes={[...data.nodes]} setNodes={setNodes} />}
+        </>
+    );
+};
+
+export default Work;

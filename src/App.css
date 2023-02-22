@@ -1,0 +1,23 @@
+.App {
+  text-align: center;
+  /* width: 800px;
+  height: 400px; */
+  height: 100%;
+
+}
+
+.graph-ui {
+  height: 100%;
+  position: relative;
+
+}
+
+#graph-id2-graph-wrapper{
+  height: 100%;
+  width: 100%;
+}
+
+#graph-id2-graph-wrapper > svg{
+  height: 100%;
+  width: 100%;
+}

@@ -1,0 +1,43 @@
+.OutputContainer {
+    height: 100%;
+    position: relative;
+}
+
+#graph-id-graph-wrapper{
+    height: 100%;
+    width: 100%;
+}
+
+#graph-id-graph-wrapper > svg{
+    height: 100%;
+    width: 100%;
+    display: flex;
+}
+
+
+.graph-ui {
+    height: 100%;
+    position: relative;
+  
+  }
+  
+  #graph-id2-graph-wrapper{
+    height: 100%;
+    width: 100%;
+  }
+  
+  #graph-id2-graph-wrapper > svg{
+    height: 100%;
+    width: 100%;
+  }
+  
+  .switches {
+    position: absolute;
+    bottom: 10px;
+  }
+
+  .scene-tooltip{
+    color: black;
+  }
+
+  
